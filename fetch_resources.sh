@@ -132,12 +132,11 @@ function configure_tempest
     $OPENSTACK_CMD user create --domain $TEST_DOMAIN_NAME --email test@trilio.io --password $NONADMIN_PWD --description $NONADMIN_USERNAME --enable $NONADMIN_USERNAME
     $OPENSTACK_CMD user create --domain $TEST_DOMAIN_NAME --email test@trilio.io --password $NEWADMIN_PWD --description $NEWADMIN_USERNAME --enable $NEWADMIN_USERNAME
     $OPENSTACK_CMD user create --domain $TEST_DOMAIN_NAME --email test@trilio.io --password $BACKUP_PWD --description $BACKUP_USERNAME --enable $BACKUP_USERNAME
-    $OPENSTACK_CMD role add --user $NONADMIN_USERNAME --project $TEST_PROJECT_NAME _member_
-     $OPENSTACK_CMD role add --user $NONADMIN_USERNAME --project $TEST_ALT_PROJECT_NAME _member_
-    $OPENSTACK_CMD role add --user $NEWADMIN_USERNAME --project $TEST_PROJECT_NAME _member_
-    $OPENSTACK_CMD role add --user $NEWADMIN_USERNAME --project $TEST_PROJECT_NAME newadmin
-    $OPENSTACK_CMD role add --user $BACKUP_USERNAME --project $TEST_PROJECT_NAME _member_
-    $OPENSTACK_CMD role add --user $BACKUP_USERNAME --project $TEST_PROJECT_NAME backup
+    $OPENSTACK_CMD role add --user $NONADMIN_USERNAME --user-domain $TEST_DOMAIN_NAME --project $TEST_PROJECT_NAME member
+    $OPENSTACK_CMD role add --user $NEWADMIN_USERNAME --user-domain $TEST_DOMAIN_NAME --project $TEST_PROJECT_NAME member
+    $OPENSTACK_CMD role add --user $NEWADMIN_USERNAME --user-domain $TEST_DOMAIN_NAME --project $TEST_PROJECT_NAME newadmin
+    $OPENSTACK_CMD role add --user $BACKUP_USERNAME --user-domain $TEST_DOMAIN_NAME --project $TEST_PROJECT_NAME member
+    $OPENSTACK_CMD role add --user $BACKUP_USERNAME --user-domain $TEST_DOMAIN_NAME --project $TEST_PROJECT_NAME backup
 
     #Fetch identity data
     admin_domain_id=$($OPENSTACK_CMD domain list | awk "/ $CLOUDADMIN_DOMAIN_NAME / { print \$2 }")
@@ -317,9 +316,10 @@ function configure_tempest
     iniset $TEMPEST_CONFIG identity project_name $TEST_PROJECT_NAME
     iniset $TEMPEST_CONFIG identity domain_name $TEST_USER_DOMAIN_NAME
     iniset $TEMPEST_CONFIG identity tenant_id $test_project_id
-    iniset $TEMPEST_CONFIG identity tenant_id_1 $test_alt_project_id
+    # iniset $TEMPEST_CONFIG identity tenant_id_1 $test_alt_project_id
+
     iniset $TEMPEST_CONFIG identity user_id $test_user_id
-    iniset $TEMPEST_CONFIG identity user_id_1 $test_alt_user_id
+    # iniset $TEMPEST_CONFIG identity user_id_1 $test_alt_user_id
     iniset $TEMPEST_CONFIG identity domain_id $test_domain_id
     iniset $TEMPEST_CONFIG identity default_domain_id $test_domain_id
     iniset $TEMPEST_CONFIG identity uri_v3 $OS_AUTH_URL
@@ -332,7 +332,7 @@ function configure_tempest
     iniset $TEMPEST_CONFIG identity newadmin_password $NEWADMIN_PWD
     iniset $TEMPEST_CONFIG identity backupuser $BACKUP_USERNAME
     iniset $TEMPEST_CONFIG identity backupuser_password $BACKUP_PWD
-
+    
     # Auth
     iniset $TEMPEST_CONFIG auth use_dynamic_credentials False
     iniset $TEMPEST_CONFIG auth test_accounts_file $TEMPEST_ACCOUNTS
@@ -514,12 +514,12 @@ fi
 
 . $OPENSTACK_CLI_VENV/bin/activate
 source openstack-setup.conf
-pip$PYTHON_VERSION install wheel
-pip$PYTHON_VERSION install openstacksdk==0.35.0
-pip$PYTHON_VERSION install os-client-config==1.18.0
-pip$PYTHON_VERSION install python-openstackclient==3.19.0
-pip$PYTHON_VERSION install python-cinderclient==4.2.0
-pip$PYTHON_VERSION install python-novaclient==15.1.0
+# pip$PYTHON_VERSION install wheel
+# pip$PYTHON_VERSION install openstacksdk==0.35.0
+# pip$PYTHON_VERSION install os-client-config==1.18.0
+# pip$PYTHON_VERSION install python-openstackclient==3.19.0
+# pip$PYTHON_VERSION install python-cinderclient==4.2.0
+# pip$PYTHON_VERSION install python-novaclient==15.1.0
 
 configure_tempest
 deactivate

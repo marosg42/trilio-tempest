@@ -666,11 +666,15 @@ class BaseWorkloadmgrTest(tempest.test.BaseTestCase):
                                 'description': 'Test',
                                 'full': 'True'}}
         LOG.debug("Snapshot Payload: " + str(payload))
+        LOG.info("MG before wait_for_workload_tobe_available")
         self.wait_for_workload_tobe_available(workload_id)
+        LOG.info("MG after wait_for_workload_tobe_available")
         if(is_full):
+            LOG.info("MG is_full")
             resp, body = self.wlm_client.client.post(
                 "/workloads/" + workload_id + "?full=1", json=payload)
         else:
+            LOG.info("MG not is_full")
             resp, body = self.wlm_client.client.post(
                 "/workloads/" + workload_id, json=payload)
         snapshot_id = body['snapshot']['id']
@@ -678,6 +682,10 @@ class BaseWorkloadmgrTest(tempest.test.BaseTestCase):
             "#### workload_id: %s ,snapshot_id: %s , operation: workload_snapshot" %
             (workload_id, snapshot_id))
         LOG.debug("Snapshot Response:" + str(resp.content))
+        LOG.info("MG before wait_for_workload_tobe_available  2")
+        self.wait_for_workload_tobe_available(workload_id)
+        LOG.info("MG after wait_for_workload_tobe_available   2")
+
         # self.wait_for_workload_tobe_available(workload_id)
         if(tvaultconf.cleanup and snapshot_cleanup):
             self.addCleanup(self.snapshot_delete, workload_id, snapshot_id)
@@ -729,6 +737,7 @@ class BaseWorkloadmgrTest(tempest.test.BaseTestCase):
         status = "available"
         start_time = int(time.time())
         LOG.debug('Checking workload status')
+        LOG.info(f'MG Checking workload status {workload_id}')
         while (status != self.getWorkloadStatus(workload_id)):
             if (self.getWorkloadStatus(workload_id) == 'error'):
                 LOG.debug('workload status is: %s , workload create failed' %
@@ -736,6 +745,8 @@ class BaseWorkloadmgrTest(tempest.test.BaseTestCase):
                 #raise Exception("Workload creation failed")
                 return False
             LOG.debug('workload status is: %s , sleeping for 30 sec' %
+                      self.getWorkloadStatus(workload_id))
+            LOG.info('MG workload status is: %s , sleeping for 30 sec' %
                       self.getWorkloadStatus(workload_id))
             time.sleep(30)
         LOG.debug('workload status of workload %s: %s' %
@@ -840,6 +851,7 @@ class BaseWorkloadmgrTest(tempest.test.BaseTestCase):
         network_restore_flag=False,
         restore_cleanup=True,
         sec_group_cleanup=False):
+        LOG.info(f"MG selective_restore At the start of snapshot_selective_restore method, workload {workload_id}/{snapshot_id}")
         LOG.debug("At the start of snapshot_selective_restore method")
         if(restore_name == ""):
             restore_name = "Tempest_test_restore"
@@ -862,13 +874,18 @@ class BaseWorkloadmgrTest(tempest.test.BaseTestCase):
                         }
                     }
                 }
-            #self.wait_for_snapshot_tobe_available(workload_id, snapshot_id)
+            LOG.info("MG selective_restore wait for snapshot to be available")
+            self.wait_for_snapshot_tobe_available(workload_id, snapshot_id)
+            LOG.info("MG selective_restore wait snapshot is available")
+            LOG.info("MG going to restore snapshot")
+            LOG.info(f"MG call is /workloads/{workload_id}/snapshots/{snapshot_id}/restores/{payload}")
             resp, body = self.wlm_client.client.post(
                 "/workloads/" + workload_id + "/snapshots/" + snapshot_id + "/restores", json=payload)
             restore_id = body['restore']['id']
             LOG.debug(
                 "#### workloadid: %s ,snapshot_id: %s , restore_id: %s , operation: snapshot_restore" %
                 (workload_id, snapshot_id, restore_id))
+            LOG.info(f"MG Response {str(resp.content)}")
             LOG.debug("Response:" + str(resp.content))
             if(resp.status_code != 202):
                 resp.raise_for_status()
@@ -890,6 +907,7 @@ class BaseWorkloadmgrTest(tempest.test.BaseTestCase):
                                 self.restored_vms, self.restored_volumes)
         else:
             restore_id = 0
+        LOG.info("MG selective_restore done")
         return restore_id
 
     '''

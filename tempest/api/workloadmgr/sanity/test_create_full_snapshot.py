@@ -23,6 +23,7 @@ from oslo_log import log as logging
 from tempest.common import waiters
 from tempest import tvaultconf
 from tempest import reporting
+import time
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -164,6 +165,7 @@ class WorkloadsTest(base.BaseWorkloadmgrTest):
             for test in tvaultconf.enabled_tests:
                 result_json[test] = {}
             LOG.debug("Result json: " + str(result_json))
+            LOG.info("MG 1 - Result json: " + str(result_json))
 
             for k in result_json.keys():
                 result_json[k]['result'] = {}
@@ -204,16 +206,18 @@ class WorkloadsTest(base.BaseWorkloadmgrTest):
                         result_json[k]['result']['Create_Workload'] = tvaultconf.FAIL + \
                             "\nERROR " + result_json[k]['workload_error_msg']
                         continue
-
+                    LOG.info("MG calling self._create_full_snapshot")
                     self._create_full_snapshot()
+                    LOG.info(f"MG after self._create_full_snapshot, id: {self.snapshot_id} status: {self.snapshot_status}")
                     result_json[k]['snapshot'] = self.snapshot_id
                     result_json[k]['snapshot_status'] = self.snapshot_status
                 else:
                     result_json[k]['result']['Prerequisite'] = tvaultconf.FAIL
                     continue
+            
+            LOG.info("MG 2 - after trigger full snapshot")
             LOG.debug("Result json after trigger full snapshot: " +
                       str(result_json))
-
             for k in result_json.keys():
                 if('snapshot_status' in result_json[k].keys()):
                     result_json[k]['snapshot_status'] = self._wait_for_workload(
@@ -239,18 +243,23 @@ class WorkloadsTest(base.BaseWorkloadmgrTest):
                             result_json[k]['workload'], result_json[k]['snapshot']))['error_msg']
                         result_json[k]['result']['Create_Snapshot'] = tvaultconf.FAIL + \
                             "\nERROR " + result_json[k]['snapshot_error_msg']
+            LOG.info("MG 3 - after snapshot complete")
             LOG.debug("Result json after snapshot complete: " +
                       str(result_json))
-
             for k in result_json.keys():
                 if('snapshot_status' in result_json[k].keys() and result_json[k]['snapshot_status'] == "available"):
                     self.restore_id = self._trigger_selective_restore(
                         [result_json[k]['instances']], result_json[k]['workload'], result_json[k]['snapshot'])
                     result_json[k]['restore'] = self.restore_id
+                    LOG.info("MG selective restore triggered")
+                    time.sleep(10)
+                    self._wait_for_workload(
+                        result_json[k]['workload'], result_json[k]['snapshot'])
+                    LOG.info("MG workload available after selective restore")
+            LOG.info("MG 4 - after trigger selective restore")
             LOG.debug(
                 "Result json after trigger selective restore: " +
                 str(result_json))
-
             for k in result_json.keys():
                 if('restore' in result_json[k].keys()):
                     result_json[k]['snapshot_status'] = self._wait_for_workload(
@@ -273,6 +282,7 @@ class WorkloadsTest(base.BaseWorkloadmgrTest):
                             self.getRestoreDetails(result_json[k]['restore']))['error_msg']
                         result_json[k]['result']['Selective_Restore'] = tvaultconf.FAIL + \
                             "\nERROR " + result_json[k]['restore_error_msg']
+            LOG.info("MG 5 - after selective restore complete")
             LOG.debug(
                 "Result json after selective restore complete: " +
                 str(result_json))
@@ -293,6 +303,7 @@ class WorkloadsTest(base.BaseWorkloadmgrTest):
                         #    result_json[k]['result']['Delete_Restore'] = tvaultconf.PASS
                         # else:
                         #    result_json[k]['result']['Delete_Restore'] = tvaultconf.FAIL
+            LOG.info("MG 6 - after delete restore")
             LOG.debug("Result json after delete restore: " + str(result_json))
 
             for k in result_json.keys():
@@ -308,6 +319,7 @@ class WorkloadsTest(base.BaseWorkloadmgrTest):
                         #    result_json[k]['result']['Delete_Snapshot'] = tvaultconf.PASS
                         # else:
                         #    result_json[k]['result']['Delete_Snapshot'] = tvaultconf.FAIL
+            LOG.info("MG 7 - after delete snapshot")
             LOG.debug("Result json after delete snapshot: " + str(result_json))
 
             for k in result_json.keys():
@@ -321,13 +333,16 @@ class WorkloadsTest(base.BaseWorkloadmgrTest):
                         #    result_json[k]['result']['Delete_Workload'] = tvaultconf.PASS
                         # else:
                         #    result_json[k]['result']['Delete_Workload'] = tvaultconf.FAIL
+            LOG.info("MG 8 - after delete workload")
             LOG.debug("Result json after delete workload: " + str(result_json))
 
         except Exception as e:
+            LOG.info(f"MG 9 - Exception !!! {str(e)}")
             LOG.error("Exception: " + str(e))
 
         finally:
             # Add results to sanity report
+            LOG.info("MG 10 - Done, cleaning up")
             LOG.debug("Finally Result json: " + str(result_json))
             for k, v in result_json.items():
                 if(('result' in v.keys()) and (len(v['result'].keys()) > 0)):
